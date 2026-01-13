@@ -353,7 +353,7 @@
 (defonce info-control-container (atom nil))
 
 ;; Style function for countries
-(defn country-style [feature]
+(defn country-style [^js feature]
   (let [props (when feature (.-properties feature))
         country-code (when props (aget props "ISO3166-1-Alpha-3"))
         value (when country-code (get soil-organic-data country-code))
@@ -387,7 +387,7 @@
     (first (str/split region-code #"\."))))
 
 ;; Style function for regional GeoJSON
-(defn regional-style [feature]
+(defn regional-style [^js feature]
   (let [props (when feature (.-properties feature))
         region-code (get-region-code props)
         value (when region-code (get regional-soil-data region-code))
@@ -406,17 +406,17 @@
        :fillOpacity 0.95})
 
 ;; Reset style for country layer
-(defn reset-country-style [layer]
-  (when-let [country-layer (:country-layer @app-state)]
+(defn reset-country-style [^js layer]
+  (when-let [^js country-layer (:country-layer @app-state)]
     (.resetStyle country-layer layer)))
 
 ;; Reset style for regional layer
-(defn reset-regional-style [layer]
-  (when-let [feature (.-feature layer)]
+(defn reset-regional-style [^js layer]
+  (when-let [^js feature (.-feature layer)]
     (.setStyle layer (regional-style feature))))
 
 ;; Mouse event handlers for country layer
-(defn on-each-country [feature layer]
+(defn on-each-country [^js feature ^js layer]
   (let [props (when feature (.-properties feature))
         country-code (when props (aget props "ISO3166-1-Alpha-3"))
         country-name (when props (aget props "name"))
@@ -435,11 +435,11 @@
                                      :hovered-country nil
                                      :hovered-value nil)))
       (.on layer "click" (fn [_e]
-                           (when-let [m (:map @app-state)]
+                           (when-let [^js m (:map @app-state)]
                              (.fitBounds m (.getBounds layer))))))))
 
 ;; Mouse event handlers for regional layer
-(defn on-each-region [feature layer]
+(defn on-each-region [^js feature ^js layer]
   (let [props (when feature (.-properties feature))
         region-name (when props
                       (or (aget props "name")
@@ -469,7 +469,7 @@
                                          :hovered-region nil
                                          :hovered-value nil))
                       :click (fn [_e]
-                               (when-let [m (:map @app-state)]
+                               (when-let [^js m (:map @app-state)]
                                  (.fitBounds m (.getBounds layer))))}))))
 
 ;; Info control component - renders current hover state
@@ -636,7 +636,7 @@
 
 ;; Switch between country and regional layers
 (defn switch-layers [mode]
-  (let [{:keys [map country-layer regional-layer]} @app-state]
+  (let [{:keys [^js map ^js country-layer ^js regional-layer]} @app-state]
     (when map
       (case mode
         :countries
