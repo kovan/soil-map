@@ -354,9 +354,9 @@
 
 ;; Style function for countries
 (defn country-style [feature]
-  (let [props (.-properties feature)
+  (let [props (when feature (.-properties feature))
         country-code (when props (aget props "ISO3166-1-Alpha-3"))
-        value (get soil-organic-data country-code)
+        value (when country-code (get soil-organic-data country-code))
         color (get-color value)]
     #js {:fillColor color
          :weight 1
@@ -388,11 +388,11 @@
 
 ;; Style function for regional GeoJSON
 (defn regional-style [feature]
-  (let [props (.-properties feature)
+  (let [props (when feature (.-properties feature))
         region-code (get-region-code props)
         value (when region-code (get regional-soil-data region-code))
         country-code (region-to-country region-code)
-        final-value (or value (get soil-organic-data country-code))]
+        final-value (or value (when country-code (get soil-organic-data country-code)))]
     #js {:fillColor (get-color final-value)
          :weight 0.5
          :opacity 1
@@ -412,61 +412,64 @@
 
 ;; Reset style for regional layer
 (defn reset-regional-style [layer]
-  (.setStyle layer (regional-style (.-feature layer))))
+  (when-let [feature (.-feature layer)]
+    (.setStyle layer (regional-style feature))))
 
 ;; Mouse event handlers for country layer
 (defn on-each-country [feature layer]
-  (let [props (.-properties feature)
-        country-code (when props (aget props "ISO3166-1-Alpha-3"))
-        country-name (when props (aget props "name"))
-        value (get soil-organic-data country-code)]
-    (.on layer "mouseover" (fn [_e]
-                             (.setStyle layer highlight-style)
-                             (.bringToFront layer)
-                             (swap! app-state assoc
-                                    :hovered-country country-name
-                                    :hovered-region nil
-                                    :hovered-value value)))
-    (.on layer "mouseout" (fn [_e]
-                            (reset-country-style layer)
-                            (swap! app-state assoc
-                                   :hovered-country nil
-                                   :hovered-value nil)))
-    (.on layer "click" (fn [_e]
-                         (when-let [m (:map @app-state)]
-                           (.fitBounds m (.getBounds layer)))))))
+  (when (and feature (.-properties feature))
+    (let [props (.-properties feature)
+          country-code (aget props "ISO3166-1-Alpha-3")
+          country-name (aget props "name")
+          value (get soil-organic-data country-code)]
+      (.on layer "mouseover" (fn [_e]
+                               (.setStyle layer highlight-style)
+                               (.bringToFront layer)
+                               (swap! app-state assoc
+                                      :hovered-country country-name
+                                      :hovered-region nil
+                                      :hovered-value value)))
+      (.on layer "mouseout" (fn [_e]
+                              (reset-country-style layer)
+                              (swap! app-state assoc
+                                     :hovered-country nil
+                                     :hovered-value nil)))
+      (.on layer "click" (fn [_e]
+                           (when-let [m (:map @app-state)]
+                             (.fitBounds m (.getBounds layer))))))))
 
 ;; Mouse event handlers for regional layer
 (defn on-each-region [feature layer]
-  (let [props (.-properties feature)
-        region-name (or (aget props "name")
-                        (aget props "NAME")
-                        (aget props "NAME_1")
-                        (aget props "nom")
-                        (aget props "Name")
-                        (aget props "reg_name")
-                        (aget props "nam"))
-        region-code (get-region-code props)
-        country-code (region-to-country region-code)
-        country-name (get country-names country-code)
-        value (or (get regional-soil-data region-code)
-                  (get soil-organic-data country-code))]
-    (.on layer #js {:mouseover (fn [_e]
-                                  (.setStyle layer highlight-style)
-                                  (.bringToFront layer)
+  (when (and feature (.-properties feature))
+    (let [props (.-properties feature)
+          region-name (or (aget props "name")
+                          (aget props "NAME")
+                          (aget props "NAME_1")
+                          (aget props "nom")
+                          (aget props "Name")
+                          (aget props "reg_name")
+                          (aget props "nam"))
+          region-code (get-region-code props)
+          country-code (region-to-country region-code)
+          country-name (get country-names country-code)
+          value (or (get regional-soil-data region-code)
+                    (get soil-organic-data country-code))]
+      (.on layer #js {:mouseover (fn [_e]
+                                    (.setStyle layer highlight-style)
+                                    (.bringToFront layer)
+                                    (swap! app-state assoc
+                                           :hovered-country country-name
+                                           :hovered-region region-name
+                                           :hovered-value value))
+                      :mouseout (fn [_e]
+                                  (reset-regional-style layer)
                                   (swap! app-state assoc
-                                         :hovered-country country-name
-                                         :hovered-region region-name
-                                         :hovered-value value))
-                    :mouseout (fn [_e]
-                                (reset-regional-style layer)
-                                (swap! app-state assoc
-                                       :hovered-country nil
-                                       :hovered-region nil
-                                       :hovered-value nil))
-                    :click (fn [_e]
-                             (when-let [m (:map @app-state)]
-                               (.fitBounds m (.getBounds layer))))})))
+                                         :hovered-country nil
+                                         :hovered-region nil
+                                         :hovered-value nil))
+                      :click (fn [_e]
+                               (when-let [m (:map @app-state)]
+                                 (.fitBounds m (.getBounds layer))))}))))
 
 ;; Info control component - renders current hover state
 (defn info-control []
