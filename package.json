@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "shadow-cljs watch app",
     "build": "shadow-cljs release app",
-    "server": "shadow-cljs server"
+    "server": "shadow-cljs server",
+    "test": "node test/hover.test.js"
   },
   "devDependencies": {
     "shadow-cljs": "^2.28.0"

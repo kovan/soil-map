@@ -315,33 +315,21 @@
    "MEX" "https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json"
    "JPN" "https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson"})
 
-;; Color scale for choropleth (brown gradient - darker = more organic matter)
+;; Color scale for choropleth (10-step gradient from green to red)
 (defn get-color [value]
   (cond
     (nil? value) "#ccc"
-    (>= value 5) "#3E2723"
-    (>= value 4) "#4E342E"
-    (>= value 3) "#5D4037"
-    (>= value 2.5) "#6D4C41"
-    (>= value 2) "#795548"
-    (>= value 1.5) "#8D6E63"
-    (>= value 1) "#A1887F"
-    (>= value 0.5) "#BCAAA4"
-    (> value 0) "#D7CCC8"
-    :else "#EFEBE9"))
-
-;; Legend data
-(def legend-items
-  [{:color "#3E2723" :label ">5%"}
-   {:color "#4E342E" :label "4-5%"}
-   {:color "#5D4037" :label "3-4%"}
-   {:color "#6D4C41" :label "2.5-3%"}
-   {:color "#795548" :label "2-2.5%"}
-   {:color "#8D6E63" :label "1.5-2%"}
-   {:color "#A1887F" :label "1-1.5%"}
-   {:color "#BCAAA4" :label "0.5-1%"}
-   {:color "#D7CCC8" :label "0-0.5%"}
-   {:color "#ccc" :label "No data"}])
+    (>= value 5) "#1B5E20"   ; Darkest green - peatland
+    (>= value 4) "#2E7D32"   ; Dark green
+    (>= value 3) "#4CAF50"   ; Green - excellent
+    (>= value 2.5) "#66BB6A" ; Medium green
+    (>= value 2) "#8BC34A"   ; Light green - good
+    (>= value 1.5) "#CDDC39" ; Yellow-green
+    (>= value 1) "#FFC107"   ; Amber - moderate
+    (>= value 0.5) "#FF9800" ; Orange - poor
+    (>= value 0.25) "#FF5722" ; Deep orange
+    (> value 0) "#F44336"    ; Red - very poor
+    :else "#ccc"))
 
 ;; State
 (defonce app-state (r/atom {:map nil
@@ -352,14 +340,14 @@
                             :hovered-region nil
                             :hovered-value nil}))
 
+;; Reference to info control container for manual re-renders
+(defonce info-control-container (atom nil))
+
 ;; Style function for countries
 (defn country-style [feature]
   (let [country-code (-> feature .-properties (aget "ISO3166-1-Alpha-3"))
         value (get soil-organic-data country-code)
         color (get-color value)]
-    ;; Debug USA and Spain
-    (when (or (= country-code "USA") (= country-code "ESP"))
-      (js/console.log "STYLE:" country-code "value:" value "color:" color))
     #js {:fillColor color
          :weight 1
          :opacity 1
@@ -392,12 +380,8 @@
   (let [props (.-properties feature)
         region-code (get-region-code props)
         value (when region-code (get regional-soil-data region-code))
-        ;; Fallback to country average if no regional data
         country-code (region-to-country region-code)
-        final-value (or value (get soil-organic-data country-code))
-        ;; Debug: log unmatched regions
-        _ (when (and (nil? region-code) js/goog.DEBUG)
-            (js/console.log "Unmatched region props:" (js/JSON.stringify props)))]
+        final-value (or value (get soil-organic-data country-code))]
     #js {:fillColor (get-color final-value)
          :weight 0.5
          :opacity 1
@@ -422,10 +406,9 @@
 ;; Mouse event handlers for country layer
 (defn on-each-country [feature layer]
   (let [country-code (-> feature .-properties (aget "ISO3166-1-Alpha-3"))
-        country-name (-> feature .-properties (aget "ADMIN"))
+        country-name (-> feature .-properties (aget "name"))
         value (get soil-organic-data country-code)]
     (.on layer "mouseover" (fn [_e]
-                             (js/console.log "Country hover:" country-name)
                              (.setStyle layer highlight-style)
                              (.bringToFront layer)
                              (swap! app-state assoc
@@ -446,8 +429,11 @@
   (let [props (.-properties feature)
         region-name (or (aget props "name")
                         (aget props "NAME")
+                        (aget props "NAME_1")
                         (aget props "nom")
-                        (aget props "Name"))
+                        (aget props "Name")
+                        (aget props "reg_name")
+                        (aget props "nam"))
         region-code (get-region-code props)
         country-code (region-to-country region-code)
         country-name (get country-names country-code)
@@ -470,7 +456,7 @@
                              (when-let [m (:map @app-state)]
                                (.fitBounds m (.getBounds layer))))})))
 
-;; Info control component
+;; Info control component - renders current hover state
 (defn info-control []
   (let [{:keys [hovered-country hovered-region hovered-value current-mode]} @app-state]
     [:div.info
@@ -487,15 +473,38 @@
            "No data")]]
        [:p (str "Hover over a " (if (= current-mode :regional) "region" "country"))])]))
 
-;; Legend control component
-(defn legend-control []
-  [:div.legend
-   [:h4 "Organic Matter %"]
-   (for [{:keys [color label]} legend-items]
-     ^{:key label}
-     [:div.legend-item
-      [:div.legend-color {:style {:background-color color}}]
-      [:span label]])])
+;; Soil quality legend - explains what the percentages mean
+(def soil-quality-categories
+  [{:range ">5%" :category "Peatland/Organic Soil" :description "Wetlands, bogs, exceptional fertility" :color "#2E7D32"}
+   {:range "3-5%" :category "Excellent" :description "Prime agricultural land" :color "#4CAF50"}
+   {:range "2-3%" :category "Good" :description "Productive farmland" :color "#8BC34A"}
+   {:range "1-2%" :category "Moderate" :description "Suitable for agriculture with management" :color "#FFC107"}
+   {:range "0.5-1%" :category "Poor" :description "Marginal land, limited agriculture" :color "#FF9800"}
+   {:range "<0.5%" :category "Very Poor" :description "Desert/arid, not suitable for crops" :color "#F44336"}])
+
+(defn soil-quality-legend []
+  [:div {:style {:background "rgba(255,255,255,0.95)"
+                 :padding "12px 14px"
+                 :border-radius "8px"
+                 :box-shadow "0 2px 8px rgba(0,0,0,0.2)"
+                 :max-width "280px"
+                 :font-size "12px"}}
+   [:h4 {:style {:margin "0 0 10px" :font-size "13px" :color "#333"}} "Soil Quality Guide"]
+   (for [{:keys [range category description color]} soil-quality-categories]
+     ^{:key category}
+     [:div {:style {:display "flex" :align-items "flex-start" :margin-bottom "8px"}}
+      [:div {:style {:width "12px"
+                     :height "12px"
+                     :border-radius "50%"
+                     :background-color color
+                     :margin-right "8px"
+                     :margin-top "2px"
+                     :flex-shrink "0"}}]
+      [:div
+       [:div {:style {:font-weight "bold" :color "#333"}}
+        (str range " - " category)]
+       [:div {:style {:color "#666" :font-size "11px"}}
+        description]]])])
 
 ;; Layer toggle control
 (defn layer-toggle []
@@ -583,13 +592,14 @@
   [:div#map])
 
 ;; Create Leaflet control from React component
-(defn create-control [component position]
+(defn create-control [component position & {:keys [on-add]}]
   (let [Control (.-Control js/L)
         control-class (.extend Control
                                #js {:onAdd (fn [_map]
                                              (let [div (.create js/L.DomUtil "div")]
                                                (.disableClickPropagation js/L.DomEvent div)
                                                (.disableScrollPropagation js/L.DomEvent div)
+                                               (when on-add (on-add div))
                                                (rdom/render [component] div)
                                                div))})]
     (control-class. #js {:position position})))
@@ -644,9 +654,10 @@
     ;; Add controls
     (.addTo (create-control title-control "topleft") m)
     (.addTo (create-control layer-toggle "topleft") m)
-    ;; (.addTo (create-control sources-control "topleft") m)  ;; temporarily disabled
-    (.addTo (create-control info-control "topright") m)
-    (.addTo (create-control legend-control "bottomright") m)
+    (.addTo (create-control sources-control "bottomleft") m)
+    (.addTo (create-control info-control "topright"
+                            :on-add #(reset! info-control-container %)) m)
+    (.addTo (create-control soil-quality-legend "bottomright") m)
 
     ;; Load country GeoJSON
     (-> (js/fetch "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
@@ -674,9 +685,8 @@
                    ;; Update info control reactively
                    (add-watch app-state :info-update
                               (fn [_ _ _old-state _new-state]
-                                ;; Re-render info control on any state change
-                                (when-let [info-div (.querySelector js/document ".info")]
-                                  (rdom/render [info-control] (.-parentNode info-div)))))))
+                                (when-let [container @info-control-container]
+                                  (rdom/render (info-control) container)))))))
         (.catch #(js/console.error "Error loading GeoJSON:" %)))))
 
 ;; Entry point
