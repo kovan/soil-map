@@ -309,20 +309,20 @@
    "ITA" "Italy", "BRA" "Brazil", "CHN" "China"
    "IND" "India", "MEX" "Mexico", "JPN" "Japan"})
 
-;; Regional GeoJSON URLs
+;; Regional GeoJSON URLs (cached locally)
 (def regional-geojson-urls
-  {"USA" "https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json"
-   "CAN" "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/canada.geojson"
-   "AUS" "https://raw.githubusercontent.com/rowanhogan/australian-states/master/states.geojson"
-   "DEU" "https://raw.githubusercontent.com/isellsoap/deutschlandGeoJSON/main/2_bundeslaender/4_niedrig.geo.json"
-   "FRA" "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson"
-   "ESP" "https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/spain-communities.geojson"
-   "ITA" "https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_regions.geojson"
-   "BRA" "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson"
-   "CHN" "https://raw.githubusercontent.com/longwosion/geojson-map-china/master/china.json"
-   "IND" "https://raw.githubusercontent.com/geohacker/india/master/state/india_telengana.geojson"
-   "MEX" "https://raw.githubusercontent.com/angelnmara/geojson/master/mexicoHigh.json"
-   "JPN" "https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson"})
+  {"USA" "data/geojson/us-states.json"
+   "CAN" "data/geojson/canada.geojson"
+   "AUS" "data/geojson/australia.geojson"
+   "DEU" "data/geojson/germany.geojson"
+   "FRA" "data/geojson/france.geojson"
+   "ESP" "data/geojson/spain.geojson"
+   "ITA" "data/geojson/italy.geojson"
+   "BRA" "data/geojson/brazil.geojson"
+   "CHN" "data/geojson/china.geojson"
+   "IND" "data/geojson/india.geojson"
+   "MEX" "data/geojson/mexico.geojson"
+   "JPN" "data/geojson/japan.geojson"})
 
 ;; Color scale for choropleth (10-step gradient from green to red)
 (defn get-color [value]
@@ -675,8 +675,8 @@
                             :on-add #(reset! info-control-container %)) m)
     (.addTo (create-control soil-quality-legend "bottomright") m)
 
-    ;; Load country GeoJSON
-    (-> (js/fetch "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
+    ;; Load country GeoJSON (cached locally)
+    (-> (js/fetch "data/geojson/countries.geojson")
         (.then #(.json %))
         (.then (fn [data]
                  (let [country-layer (.geoJson js/L data #js {:style country-style
