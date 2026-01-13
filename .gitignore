@@ -4,3 +4,5 @@ public/js/
 *.png
 test.js
 .nrepl-port
+.clj-kondo/
+.lsp/
