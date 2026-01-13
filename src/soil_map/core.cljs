@@ -417,11 +417,11 @@
 
 ;; Mouse event handlers for country layer
 (defn on-each-country [feature layer]
-  (when (and feature (.-properties feature))
-    (let [props (.-properties feature)
-          country-code (aget props "ISO3166-1-Alpha-3")
-          country-name (aget props "name")
-          value (get soil-organic-data country-code)]
+  (let [props (when feature (.-properties feature))
+        country-code (when props (aget props "ISO3166-1-Alpha-3"))
+        country-name (when props (aget props "name"))
+        value (when country-code (get soil-organic-data country-code))]
+    (when props
       (.on layer "mouseover" (fn [_e]
                                (.setStyle layer highlight-style)
                                (.bringToFront layer)
@@ -440,20 +440,21 @@
 
 ;; Mouse event handlers for regional layer
 (defn on-each-region [feature layer]
-  (when (and feature (.-properties feature))
-    (let [props (.-properties feature)
-          region-name (or (aget props "name")
+  (let [props (when feature (.-properties feature))
+        region-name (when props
+                      (or (aget props "name")
                           (aget props "NAME")
                           (aget props "NAME_1")
                           (aget props "nom")
                           (aget props "Name")
                           (aget props "reg_name")
-                          (aget props "nam"))
-          region-code (get-region-code props)
-          country-code (region-to-country region-code)
-          country-name (get country-names country-code)
-          value (or (get regional-soil-data region-code)
-                    (get soil-organic-data country-code))]
+                          (aget props "nam")))
+        region-code (get-region-code props)
+        country-code (region-to-country region-code)
+        country-name (get country-names country-code)
+        value (or (get regional-soil-data region-code)
+                  (get soil-organic-data country-code))]
+    (when props
       (.on layer #js {:mouseover (fn [_e]
                                     (.setStyle layer highlight-style)
                                     (.bringToFront layer)
