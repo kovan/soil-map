@@ -14,16 +14,20 @@
    "FIN" 5.2, "SVK" 2.0, "NOR" 4.5, "IRL" 4.8, "HRV" 2.1
    "BIH" 2.3, "ALB" 1.7, "LTU" 2.4, "SVN" 3.2, "LVA" 2.6
    "EST" 3.0, "MKD" 1.9, "LUX" 2.3, "MNE" 2.5, "ISL" 6.5
-   "SRB" 2.1, "BLR" 2.5, "MDA" 2.8
+   "SRB" 2.1, "BLR" 2.5, "MDA" 2.8, "CYP" 1.2, "MLT" 1.0
+   "AND" 2.5, "SMR" 1.8, "LIE" 3.0, "MCO" 1.5, "XKX" 2.0
    ;; North America
    "USA" 2.0, "CAN" 3.5, "MEX" 1.6, "GTM" 2.2, "CUB" 2.0
    "HTI" 1.4, "DOM" 1.8, "HND" 2.0, "SLV" 1.8, "NIC" 2.2
    "CRI" 3.2, "PAN" 2.8, "JAM" 2.0, "TTO" 2.4, "BHS" 1.5
    "BLZ" 2.5
+   ;; Caribbean
+   "BRB" 2.0, "GRD" 2.2, "ATG" 1.8, "LCA" 2.5, "VCT" 2.2
+   "KNA" 2.0, "DMA" 2.8
    ;; South America
    "BRA" 1.8, "ARG" 2.2, "COL" 2.5, "PER" 1.9, "VEN" 1.8
    "CHL" 2.8, "ECU" 2.6, "BOL" 1.6, "PRY" 1.4, "URY" 2.8
-   "GUY" 2.2, "SUR" 2.0
+   "GUY" 2.2, "SUR" 2.0, "GUF" 2.0, "FLK" 3.5
    ;; Asia
    "CHN" 1.5, "IND" 0.8, "IDN" 2.2, "PAK" 0.6, "BGD" 1.2
    "JPN" 2.8, "PHL" 1.8, "VNM" 1.6, "THA" 1.4, "MMR" 1.5
@@ -33,7 +37,8 @@
    "IRQ" 0.7, "IRN" 0.9, "SAU" 0.3, "YEM" 0.5, "OMN" 0.2
    "ARE" 0.2, "KWT" 0.2, "QAT" 0.2, "BHR" 0.2, "ISR" 0.8
    "JOR" 0.6, "LBN" 1.2, "SYR" 0.8, "AZE" 1.8, "GEO" 2.5
-   "ARM" 2.0
+   "ARM" 2.0, "BTN" 2.8, "MDV" 0.5, "BRN" 2.2, "TLS" 1.8
+   "SGP" 1.5, "PSE" 0.8, "TUR" 1.4
    ;; Africa
    "NGA" 1.2, "EGY" 0.5, "ZAF" 1.5, "DZA" 0.8, "MAR" 1.0
    "SDN" 0.4, "ETH" 1.8, "KEN" 1.6, "TZA" 1.4, "UGA" 2.2
@@ -44,10 +49,14 @@
    "COD" 1.8, "CAF" 1.5, "TCD" 0.5, "SOM" 0.4, "ERI" 0.6
    "BWA" 0.8, "NAM" 0.5, "SWZ" 1.8, "LSO" 1.5, "MWI" 1.4
    "RWA" 2.5, "BDI" 2.0, "DJI" 0.3, "GMB" 0.6, "GNB" 1.2
-   "TUN" 0.9, "LBY" 0.3, "SSD" 1.2
+   "TUN" 0.9, "LBY" 0.3, "SSD" 1.2, "CPV" 1.0, "SYC" 2.2
+   "MUS" 2.5, "COM" 2.2, "GNQ" 2.0, "STP" 2.5, "REU" 2.8
+   "MYT" 2.2, "ESH" 0.3
    ;; Oceania
    "AUS" 1.2, "NZL" 4.5, "PNG" 2.5, "FJI" 2.8, "SLB" 2.2
-   "VUT" 2.5, "NCL" 2.0, "WSM" 3.0})
+   "VUT" 2.5, "NCL" 2.0, "WSM" 3.0, "TON" 2.5, "KIR" 0.5
+   "MHL" 0.4, "PLW" 2.2, "FSM" 2.0, "NRU" 0.3, "TUV" 0.4
+   "PYF" 2.5, "GUM" 2.0, "ASM" 2.2})
 
 ;; Regional soil organic data (state/province level)
 (def regional-soil-data
