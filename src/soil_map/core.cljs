@@ -3,6 +3,9 @@
             [reagent.dom :as rdom]
             [clojure.string :as str]))
 
+;; Build ID (injected at compile time via shadow-cljs closure-defines)
+(goog-define BUILD_ID "dev")
+
 ;; Soil Organic Carbon data by country (% in topsoil)
 ;; Sources: FAO SOLAW, ISRIC SoilGrids, scientific literature
 (def soil-organic-data
@@ -606,6 +609,14 @@
                          :color "#888"}}
            "Data compiled from multiple sources and may vary from local measurements. Last updated: 2024"]])])))
 
+;; Build ID control - shows build version at bottom right
+(defn build-id-control []
+  [:div {:style {:background "rgba(255,255,255,0.7)"
+                 :padding "2px 6px"
+                 :border-radius "3px"
+                 :font-size "10px"
+                 :color "#888"}}
+   (str "Build: " BUILD_ID)])
 
 ;; Main app component
 (defn app []
@@ -678,6 +689,7 @@
     (.addTo (create-control info-control "topright"
                             :on-add #(reset! info-control-container %)) m)
     (.addTo (create-control soil-quality-legend "bottomright") m)
+    (.addTo (create-control build-id-control "bottomright") m)
 
     ;; Load country GeoJSON (cached locally)
     (-> (js/fetch "data/geojson/countries.geojson")

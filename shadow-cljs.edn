@@ -5,4 +5,5 @@
                 :asset-path "/js"
                 :modules {:main {:init-fn soil-map.core/init}}
                 :devtools {:http-root "public"
-                           :http-port 8080}}}}
+                           :http-port 8080}
+                :release {:closure-defines {soil-map.core/BUILD_ID #shadow/env "BUILD_ID"}}}}}
