@@ -1,1 +1,6 @@
 node_modules/
+.shadow-cljs/
+public/js/
+*.png
+test.js
+.nrepl-port
