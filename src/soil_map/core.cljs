@@ -354,7 +354,8 @@
 
 ;; Style function for countries
 (defn country-style [feature]
-  (let [country-code (-> feature .-properties (aget "ISO3166-1-Alpha-3"))
+  (let [props (.-properties feature)
+        country-code (when props (aget props "ISO3166-1-Alpha-3"))
         value (get soil-organic-data country-code)
         color (get-color value)]
     #js {:fillColor color
@@ -366,18 +367,19 @@
 ;; Helper to get region code from feature properties
 (defn get-region-code [props]
   ;; Try all property values to find a matching region name
-  (let [keys (js/Object.keys props)]
-    (loop [i 0]
-      (if (>= i (.-length keys))
-        nil
-        (let [key (aget keys i)
-              val (aget props key)]
-          (if (string? val)
-            (if-let [code (or (get region-name-to-code val)
-                              (get region-name-to-code (str/trim val)))]
-              code
-              (recur (inc i)))
-            (recur (inc i))))))))
+  (when props
+    (let [keys (js/Object.keys props)]
+      (loop [i 0]
+        (if (>= i (.-length keys))
+          nil
+          (let [key (aget keys i)
+                val (aget props key)]
+            (if (string? val)
+              (if-let [code (or (get region-name-to-code val)
+                                (get region-name-to-code (str/trim val)))]
+                code
+                (recur (inc i)))
+              (recur (inc i)))))))))
 
 ;; Helper to get country code from region code
 (defn region-to-country [region-code]
@@ -414,8 +416,9 @@
 
 ;; Mouse event handlers for country layer
 (defn on-each-country [feature layer]
-  (let [country-code (-> feature .-properties (aget "ISO3166-1-Alpha-3"))
-        country-name (-> feature .-properties (aget "name"))
+  (let [props (.-properties feature)
+        country-code (when props (aget props "ISO3166-1-Alpha-3"))
+        country-name (when props (aget props "name"))
         value (get soil-organic-data country-code)]
     (.on layer "mouseover" (fn [_e]
                              (.setStyle layer highlight-style)
