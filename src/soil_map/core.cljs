@@ -354,9 +354,10 @@
 
 ;; Style function for countries
 (defn country-style [^js feature]
-  (let [props (when feature (.-properties feature))
-        country-code (when props (aget props "ISO3166-1-Alpha-3"))
-        value (when country-code (get soil-organic-data country-code))
+  (let [props (when (and (some? feature) (some? (.-properties feature)))
+                (.-properties feature))
+        country-code (when (some? props) (aget props "ISO3166-1-Alpha-3"))
+        value (when (some? country-code) (get soil-organic-data country-code))
         color (get-color value)]
     #js {:fillColor color
          :weight 1
@@ -388,11 +389,12 @@
 
 ;; Style function for regional GeoJSON
 (defn regional-style [^js feature]
-  (let [props (when feature (.-properties feature))
+  (let [props (when (and (some? feature) (some? (.-properties feature)))
+                (.-properties feature))
         region-code (get-region-code props)
-        value (when region-code (get regional-soil-data region-code))
+        value (when (some? region-code) (get regional-soil-data region-code))
         country-code (region-to-country region-code)
-        final-value (or value (when country-code (get soil-organic-data country-code)))]
+        final-value (or value (when (some? country-code) (get soil-organic-data country-code)))]
     #js {:fillColor (get-color final-value)
          :weight 0.5
          :opacity 1
@@ -417,11 +419,12 @@
 
 ;; Mouse event handlers for country layer
 (defn on-each-country [^js feature ^js layer]
-  (let [props (when feature (.-properties feature))
-        country-code (when props (aget props "ISO3166-1-Alpha-3"))
-        country-name (when props (aget props "name"))
-        value (when country-code (get soil-organic-data country-code))]
-    (when props
+  (let [props (when (and (some? feature) (some? (.-properties feature)))
+                (.-properties feature))
+        country-code (when (some? props) (aget props "ISO3166-1-Alpha-3"))
+        country-name (when (some? props) (aget props "name"))
+        value (when (some? country-code) (get soil-organic-data country-code))]
+    (when (some? props)
       (.on layer "mouseover" (fn [_e]
                                (.setStyle layer highlight-style)
                                (.bringToFront layer)
@@ -440,8 +443,9 @@
 
 ;; Mouse event handlers for regional layer
 (defn on-each-region [^js feature ^js layer]
-  (let [props (when feature (.-properties feature))
-        region-name (when props
+  (let [props (when (and (some? feature) (some? (.-properties feature)))
+                (.-properties feature))
+        region-name (when (some? props)
                       (or (aget props "name")
                           (aget props "NAME")
                           (aget props "NAME_1")
@@ -454,7 +458,7 @@
         country-name (get country-names country-code)
         value (or (get regional-soil-data region-code)
                   (get soil-organic-data country-code))]
-    (when props
+    (when (some? props)
       (.on layer #js {:mouseover (fn [_e]
                                     (.setStyle layer highlight-style)
                                     (.bringToFront layer)
