@@ -10,6 +10,7 @@
     "deploy": "npx wrangler pages deploy public --project-name soil-quality-map --upload-source-maps"
   },
   "devDependencies": {
+    "mapshaper": "^0.6.113",
     "shadow-cljs": "^2.28.0"
   },
   "dependencies": {
