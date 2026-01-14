@@ -10,6 +10,8 @@ async function runTests() {
 
   let passed = 0;
   let failed = 0;
+  const consoleErrors = [];
+  const pageErrors = [];
 
   async function test(name, fn) {
     try {
@@ -29,10 +31,87 @@ async function runTests() {
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1280, height: 800 });
-  await page.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 60000 });
-  await page.waitForSelector('.leaflet-container', { timeout: 30000 });
 
-  // Wait for GeoJSON to load
+  // Capture console errors
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      consoleErrors.push(msg.text());
+    }
+  });
+
+  // Capture page errors (uncaught exceptions)
+  page.on('pageerror', err => {
+    pageErrors.push(err.message);
+  });
+
+  console.log('\nLoading page...\n');
+
+  await page.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 60000 });
+
+  // Give time for any async errors
+  await new Promise(r => setTimeout(r, 2000));
+
+  console.log('Running GeoJSON loading tests...\n');
+
+  // Test 0: No JavaScript errors during page load
+  await test('No JavaScript errors during page load', async () => {
+    if (pageErrors.length > 0) {
+      throw new Error(`Page errors: ${pageErrors.join('; ')}`);
+    }
+  });
+
+  // Test 0b: No console errors related to GeoJSON
+  await test('No GeoJSON-related console errors', async () => {
+    const geoJsonErrors = consoleErrors.filter(e =>
+      e.includes('GeoJSON') ||
+      e.includes('ISO3166') ||
+      e.includes('properties')
+    );
+    if (geoJsonErrors.length > 0) {
+      throw new Error(`GeoJSON errors: ${geoJsonErrors.join('; ')}`);
+    }
+  });
+
+  // Test 0c: Leaflet container exists
+  await test('Leaflet map container exists', async () => {
+    const hasContainer = await page.evaluate(() => {
+      return document.querySelector('.leaflet-container') !== null;
+    });
+    assert(hasContainer, 'Leaflet container not found');
+  });
+
+  // Test 0d: GeoJSON countries loaded
+  await test('GeoJSON country paths are rendered', async () => {
+    // Wait for paths to appear
+    await page.waitForFunction(() => {
+      const paths = document.querySelectorAll('.leaflet-interactive');
+      return paths.length > 0;
+    }, { timeout: 30000 });
+
+    const pathCount = await page.evaluate(() => {
+      return document.querySelectorAll('.leaflet-interactive').length;
+    });
+    console.log(`    (Found ${pathCount} interactive paths)`);
+    assert(pathCount > 50, `Expected >50 country paths, got ${pathCount}`);
+  });
+
+  // Test 0e: Countries have fill colors (not just default)
+  await test('Country paths have fill colors applied', async () => {
+    const fillColors = await page.evaluate(() => {
+      const paths = document.querySelectorAll('.leaflet-interactive');
+      const colors = new Set();
+      paths.forEach(p => {
+        const fill = p.getAttribute('fill');
+        if (fill) colors.add(fill);
+      });
+      return Array.from(colors);
+    });
+    console.log(`    (Found colors: ${fillColors.slice(0, 5).join(', ')}...)`);
+    assert(fillColors.length > 1, `Expected multiple fill colors, got: ${fillColors}`);
+    assert(!fillColors.every(c => c === '#ccc'), 'All countries have default gray color');
+  });
+
+  // Wait for full GeoJSON to load before hover tests
   await page.waitForFunction(() => {
     const paths = document.querySelectorAll('.leaflet-interactive');
     return paths.length > 50;
@@ -163,6 +242,19 @@ async function runTests() {
     assert(legendCheck.hasPoor, 'Missing Poor category');
     assert(legendCheck.hasVeryPoor, 'Missing Very Poor category');
     assert(legendCheck.hasPeatland, 'Missing Peatland category');
+  });
+
+  // Final test: Report all console errors collected
+  await test('Summary: No uncaught errors during all tests', async () => {
+    if (consoleErrors.length > 0) {
+      console.log('    Console errors collected:');
+      consoleErrors.forEach(e => console.log(`      - ${e.substring(0, 200)}`));
+    }
+    if (pageErrors.length > 0) {
+      console.log('    Page errors collected:');
+      pageErrors.forEach(e => console.log(`      - ${e.substring(0, 200)}`));
+      throw new Error(`${pageErrors.length} page error(s) occurred`);
+    }
   });
 
   await browser.close();

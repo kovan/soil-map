@@ -6,7 +6,8 @@
     "dev": "shadow-cljs watch app",
     "build": "export BUILD_ID=$(git rev-parse --short HEAD) && shadow-cljs release app",
     "server": "shadow-cljs server",
-    "test": "node test/hover.test.js"
+    "test": "node test/hover.test.js",
+    "deploy": "npx wrangler pages deploy public --project-name soil-quality-map --upload-source-maps"
   },
   "devDependencies": {
     "shadow-cljs": "^2.28.0"

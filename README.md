@@ -59,6 +59,10 @@ npm run build
 npx wrangler pages deploy public --project-name soil-quality-map
 ```
 
+```basg
+npm run build && npx wrangler pages deploy public --project-name soil-quality-map --upload-source-maps
+```
+
 ### Custom Domain
 
 1. Go to https://dash.cloudflare.com
